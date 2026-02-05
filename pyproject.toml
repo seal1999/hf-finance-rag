@@ -1,0 +1,36 @@
+[project]
+name = "hf-finance-rag"
+version = "0.1.0"
+description = "Advanced RAG practice with Hugging Face finance data"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Data
+    "datasets>=2.19.0",
+    "huggingface-hub>=0.23.0",
+    # Embeddings & Vector Store
+    "sentence-transformers>=3.0.0",
+    "chromadb>=0.5.0",
+    # Text Processing
+    "langchain>=0.2.0",
+    "langchain-text-splitters>=0.2.0",
+    "langchain-openai>=0.2.0",
+    "langchain-huggingface>=0.1.0",
+    "langchain-community>=0.3.0",
+    "tiktoken",
+    "rank_bm25",
+    "kiwipiepy",
+    # LLM
+    "openai>=1.30.0",
+    # UI
+    "gradio>=4.0.0",
+    # Config & Utils
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+    "pandas>=2.2.0",
+    # Notebook
+    "jupyter",
+    "ipykernel",
+]
+
