@@ -66,14 +66,14 @@ class QueryTransformer:
 사용자의 질문을 검색에 더 적합한 형태로 재작성해 주세요.
 
 원칙:
+- 고유명사(회사명, 인물명, 제품명)는 반드시 유지
 - 핵심 키워드를 명확히 포함
 - 불필요한 조사나 어미 제거
-- 검색에 유용한 동의어나 관련 용어 추가
 - 한 문장으로 간결하게
 
 원본 질문: {query}
 
-재작성된 쿼리 (한 문장만 출력):"""
+재작성된 쿼리 (한 문장만 출력, 고유명사 유지):"""
 
         response = self.llm.invoke(prompt)
         rewritten = response.strip().split('\n')[0].strip()
@@ -345,10 +345,10 @@ class AdvancedHybridRAG:
         return final_docs
 
     def generate_answer(self, query: str, documents: list[Document]) -> str:
-        """검색된 문서를 기반으로 답변 생성"""
+        """검색된 문서를 기반으로 답변 생성 (환각 방지 강화)"""
         context = "\n\n---\n\n".join([doc.page_content for doc in documents])
 
-        prompt = f"""당신은 금융 분야 전문가입니다. 아래 제공된 문서들을 참고하여 질문에 답변해 주세요.
+        prompt = f"""당신은 금융 분야 전문가입니다. 아래 제공된 참고 문서를 기반으로 질문에 답변하세요.
 
 ## 참고 문서
 {context}
@@ -356,17 +356,17 @@ class AdvancedHybridRAG:
 ## 질문
 {query}
 
-## 답변 지침
-- 제공된 문서의 내용을 기반으로 답변하세요.
-- 문서에 없는 내용은 추측하지 마세요.
-- 핵심 정보를 명확하게 전달하세요.
-- 비교 질문인 경우 항목별로 비교해 주세요.
+## 답변 규칙
+1. 참고 문서에 있는 내용만 사용하여 답변하세요.
+2. 문서에서 직접 관련된 내용을 찾아 인용하세요.
+3. 문서의 표현을 최대한 그대로 사용하세요.
+4. 2-4문장으로 간결하게 답변하세요.
 
 ## 답변
 """
 
         response = self.llm.invoke(prompt)
-        return response
+        return response.strip()
 
     def query(self, question: str, verbose: bool = True) -> str:
         """질문에 대한 답변 생성 (Query Transformation + Reranking 포함)"""
@@ -408,15 +408,15 @@ class AdvancedHybridRAG:
 
 def main():
     # Advanced RAG 시스템 초기화
-    # 2-Stage Retrieval: 1차(top_k=20) → 2차 Rerank(top_n=5)
+    # 2-Stage Retrieval: 1차(top_k=20) → 2차 Rerank(top_n=7)
     rag = AdvancedHybridRAG(
         top_k=20,           # 1차 검색에서 가져올 후보 문서 수
-        rerank_top_n=5,     # Reranker 후 최종 문서 수
-        bm25_weight=0.3,
-        vector_weight=0.7,
+        rerank_top_n=7,     # Reranker 후 최종 문서 수 (증가)
+        bm25_weight=0.4,    # BM25 가중치 증가 (키워드 매칭 강화)
+        vector_weight=0.6,
         use_rewrite=True,
-        use_decomposition=True,
-        use_hyde=True,
+        use_decomposition=False,  # 단순 질문에서는 비활성화
+        use_hyde=False,           # 환각 방지를 위해 비활성화
         use_reranker=True,  # Cross-Encoder Reranker 활성화
     )
 

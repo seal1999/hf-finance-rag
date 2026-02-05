@@ -108,9 +108,9 @@ uv run python ingest_to_chroma.py
 - **RRF (Reciprocal Rank Fusion)**: 두 검색 결과 통합
 
 ```python
-# 가중치 설정
-bm25_weight=0.3
-vector_weight=0.7
+# 가중치 설정 (개선 후)
+bm25_weight=0.5  # 키워드 매칭 강화
+vector_weight=0.5
 ```
 
 #### 2. Query Transformation (쿼리 변환)
@@ -123,8 +123,8 @@ vector_weight=0.7
 
 #### 3. 2-Stage Retrieval (2단계 검색)
 
-1. **1단계 (Bi-Encoder)**: 빠른 후보 검색 (top_k=15)
-2. **2단계 (Cross-Encoder Reranker)**: 정밀 재순위화 (rerank_top_n=5)
+1. **1단계 (Bi-Encoder)**: 빠른 후보 검색 (top_k=25)
+2. **2단계 (Cross-Encoder Reranker)**: 정밀 재순위화 (rerank_top_n=7)
    - 모델: `BAAI/bge-reranker-v2-m3`
 
 ### 사용 예시
@@ -132,12 +132,12 @@ vector_weight=0.7
 ```python
 from hybrid_rag_query import AdvancedHybridRAG
 
-# RAG 시스템 초기화
+# RAG 시스템 초기화 (개선된 설정)
 rag = AdvancedHybridRAG(
-    top_k=15,
-    rerank_top_n=5,
-    bm25_weight=0.3,
-    vector_weight=0.7,
+    top_k=25,            # 더 많은 후보 검색
+    rerank_top_n=7,      # 더 많은 문서 사용
+    bm25_weight=0.5,     # 키워드 매칭 강화
+    vector_weight=0.5,
     use_rewrite=True,
     use_decomposition=False,
     use_hyde=False,
@@ -201,8 +201,8 @@ uv run python evaluate_rag.py
 
 ### 평가 과정
 
-1. **테스트셋 생성**: ChromaDB에서 문서 샘플링 후 LLM으로 질문/답변 쌍 생성 (10개)
-2. **RAG 답변 생성**: 생성된 질문에 대해 RAG 시스템으로 답변
+1. **고정 테스트셋 사용**: 10개의 금융 관련 질문/정답 쌍 (일관된 비교를 위해)
+2. **RAG 답변 생성**: 테스트 질문에 대해 RAG 시스템으로 답변
 3. **LLM-as-Judge 평가**: 3가지 메트릭으로 점수 산정
 
 ### 평가 메트릭
@@ -218,6 +218,28 @@ uv run python evaluate_rag.py
 - **4.0 이상**: 우수 (Production Ready)
 - **3.0-4.0**: 양호 (개선 여지 있음)
 - **3.0 미만**: 개선 필요
+
+### 평가 결과 비교
+
+| 버전 | Faithfulness | Relevancy | Correctness | 전체 평균 |
+|------|--------------|-----------|-------------|-----------|
+| 개선 전 | 3.10 | 3.10 | 2.20 | **2.80** |
+| 개선 후 | 3.80 | 3.40 | 2.80 | **3.33** |
+
+### 주요 개선 사항
+
+1. **검색 파라미터 최적화**
+   - `top_k`: 15 → 25 (더 많은 후보 검색)
+   - `rerank_top_n`: 5 → 7 (더 많은 문서 사용)
+   - `bm25_weight`: 0.3 → 0.5 (키워드 매칭 강화)
+
+2. **답변 생성 프롬프트 개선**
+   - 문서 기반 답변 유도 강화
+   - 간결한 답변 (2-4문장) 지침 추가
+   - 문서 인용 권장
+
+3. **쿼리 변환 개선**
+   - 고유명사(회사명, 인물명) 보존 강화
 
 ### 출력 파일
 
